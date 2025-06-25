@@ -33,9 +33,26 @@
       pointer-events: none;
       z-index: 2;
     }
+    #notice {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 3;
+      background: rgba(255, 255, 255, 0.8);
+      color: #333;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      max-width: 90vw;
+    }
   </style>
 </head>
 <body>
+  <!-- Подсказка -->
+  <div id="notice">
+    Если встряхивание не работает: разрешите доступ к движениям в Настройки → Safari → Доступ к движениям и ориентации.
+  </div>
+
   <!-- Музыка -->
   <audio id="bgMusic" autoplay loop>
     <source src="Shissou With Guitar Riff.mp3" type="audio/mpeg">
@@ -52,7 +69,22 @@
     // Фоновая музыка для iOS
     document.addEventListener('click', () => {
       document.getElementById('bgMusic').play();
+      requestMotionPermission();
     }, { once: true });
+
+    function requestMotionPermission() {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission().then(response => {
+          if (response === 'granted') {
+            window.addEventListener('devicemotion', handleMotion);
+          } else {
+            alert('Для работы встряхивания требуется разрешение на доступ к движениям.');
+          }
+        }).catch(console.error);
+      } else {
+        window.addEventListener('devicemotion', handleMotion);
+      }
+    }
 
     // Контент
     const materials = [
@@ -66,18 +98,6 @@
     contentDiv.innerHTML = materials[current];
 
     let lastShake = Date.now();
-
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-      DeviceMotionEvent.requestPermission().then(response => {
-        if (response === 'granted') {
-          window.addEventListener('devicemotion', handleMotion);
-        } else {
-          alert('Для работы требуется доступ к датчику движения.');
-        }
-      }).catch(console.error);
-    } else {
-      window.addEventListener('devicemotion', handleMotion);
-    }
 
     function handleMotion(event) {
       const acc = event.accelerationIncludingGravity;
